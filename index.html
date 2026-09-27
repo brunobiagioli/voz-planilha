@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Teste de Voz</title>
+</head>
+
+<body>
+
+  <h2>Teste de captura de voz</h2>
+
+  <p>
+    Este teste verifica se o navegador consegue acessar
+    o microfone e gravar áudio.
+  </p>
+
+  <button id="iniciar">🎙️ Iniciar gravação</button>
+  <button id="parar" disabled>⏹️ Parar gravação</button>
+
+  <p id="status">Aguardando...</p>
+
+  <h3>Áudio gravado</h3>
+
+  <audio id="audio" controls></audio>
+
+  <script>
+
+    let mediaRecorder;
+    let partesAudio = [];
+
+    const botaoIniciar = document.getElementById("iniciar");
+    const botaoParar = document.getElementById("parar");
+    const status = document.getElementById("status");
+    const audio = document.getElementById("audio");
+
+
+    botaoIniciar.onclick = async function() {
+
+      try {
+
+        status.innerText =
+          "Solicitando acesso ao microfone...";
+
+        const stream =
+          await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+
+        status.innerText =
+          "🎙️ Gravando... fale alguma coisa.";
+
+        partesAudio = [];
+
+        mediaRecorder =
+          new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = function(event) {
+
+          if (event.data.size > 0) {
+            partesAudio.push(event.data);
+          }
+
+        };
+
+
+        mediaRecorder.onstop = function() {
+
+          const blob =
+            new Blob(
+              partesAudio,
+              { type: mediaRecorder.mimeType }
+            );
+
+          const url =
+            URL.createObjectURL(blob);
+
+          audio.src = url;
+
+          stream
+            .getTracks()
+            .forEach(track => track.stop());
+
+          status.innerText =
+            "Gravação concluída. Clique no ▶ para ouvir.";
+        };
+
+
+        mediaRecorder.start();
+
+        botaoIniciar.disabled = true;
+        botaoParar.disabled = false;
+
+
+      } catch (erro) {
+
+        status.innerText =
+          "Erro ao acessar o microfone: " +
+          erro.name +
+          " - " +
+          erro.message;
+
+      }
+
+    };
+
+
+    botaoParar.onclick = function() {
+
+      if (
+        mediaRecorder &&
+        mediaRecorder.state === "recording"
+      ) {
+
+        mediaRecorder.stop();
+
+        botaoIniciar.disabled = false;
+        botaoParar.disabled = true;
+
+      }
+
+    };
+
+  </script>
+
+</body>
+</html>
